@@ -1,6 +1,24 @@
 use std::env;
 use std::fs;
 use std::path;
+use crate::entry::Entry;
+
+pub struct Render {
+    entrys: Box<Vec<Entry>>,
+    error: std::io::Error,
+}
+
+impl Render {
+    pub fn new() -> Self {
+
+
+        let entrys = Vec::from());
+        
+        Self{
+            entrys: Box::new(),
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct DirEntryFormat {
