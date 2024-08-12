@@ -1,3 +1,4 @@
+use std::alloc::System;
 use std::collections::HashMap;
 use std::env;
 use std::fmt::Error;
@@ -10,16 +11,15 @@ pub struct Render {
 }
 
 enum SubOption {
-    All,
     Time,
+    All,
     Long,
 }
 
 impl Render {
-    pub fn init() -> Result<Self, std::io::Error> {
-        let mut sub_options = Vec::new();
+    pub fn init() -> Result<Self, System::Err> {
         let mut is_all_entry = false;
-        let mut all_chars = HashMap::new();
+        let mut sub_options = HashMap::new();
 
         let args: Vec<String> = env::args().collect();
         for arg in args {
@@ -28,10 +28,14 @@ impl Render {
             }
             let a = arg.trim_start_matches("-");
             for c in a.chars() {
+                let mut sub_opt: SubOption;
                 match c {
-                    "a" => {is_all_entry = true},
-                    "t" => { sub_options.push(SubOption::Time) },
-                    "l" => { sub_options.push(SubOption::Long) },
+                    "a" => { 
+                        is_all_entry = true;
+                        sub_opt = SubOption::All;
+                    },
+                    "t" => { sub_opt = SubOption::Time },
+                    "l" => { sub_opt = SubOption::Long },
                     _ => { 
                         return Err()    
                     },
