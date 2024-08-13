@@ -1,7 +1,9 @@
 use core::fmt;
+use std::process;
 
 pub enum Error {
     SubOption {sub: String, msg: String},
+    Common {msg: String},
 }
 
 impl fmt::Display for Error {
@@ -10,10 +12,21 @@ impl fmt::Display for Error {
             Self::SubOption { sub, msg } => {
                 write!(f, "sub option is error:\noption={sub}\nerror_msg={msg}")
             },
+            Self::Common { msg } => {
+                write!(f, "{}", msg)
+            },
         }
     }
 }
 
-pub fn new_sub_opt(sub: String, msg: String) -> Error {
-    Error::SubOption { sub, msg }
+pub fn thrown_subopt_err(sub: String, msg: String) {
+    let e = Error::SubOption { sub, msg };
+    println!("{}", e);
+    process::exit(0);
+}
+
+pub fn thrown_common_err(msg: String) {
+    let e = Error::Common { msg };
+    println!("{}", e);
+    process::exit(0);
 }

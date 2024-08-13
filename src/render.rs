@@ -1,13 +1,13 @@
-use std::alloc::System;
-use std::collections::HashMap;
-use std::{env, process};
+use std::{env, fs};
 use crate::entry::Entry;
 use crate::error;
 
 pub struct Render {
-    header_entry: Box<Option<Entry>>,
+    entries: Vec<Entry>,
+    sub_options: Vec<SubOption>,
 }
 
+#[derive(PartialEq, Eq)]
 enum SubOption {
     Time,
     All,
@@ -16,9 +16,7 @@ enum SubOption {
 
 impl Render {
     pub fn init() -> Self {
-        let mut is_all_entry = false;
-        let mut sub_options = HashMap::new();
-
+        let mut sub_options = Vec::new();
         let args: Vec<String> = env::args().collect();
         for arg in args {
             if !arg.starts_with("-") || arg.starts_with("--") {
@@ -26,92 +24,59 @@ impl Render {
             }
             let a = arg.trim_start_matches("-");
             for c in a.chars() {
-                let mut sub_opt: SubOption;
+                let mut sub_opt: Option<SubOption> = None;
                 match c {
-                    'a' => { 
-                        is_all_entry = true;
-                        sub_opt = SubOption::All;
-                    },
-                    't' => { sub_opt = SubOption::Time },
-                    'l' => { sub_opt = SubOption::Long },
-                    _ => {
-                        let e = error::new_sub_opt(c.to_string(), "does not support".to_string());
-                        println!("{}", e);
-                        process::exit(0);
-                    },
+                    'a' => { sub_opt = Some(SubOption::All) },
+                    't' => { sub_opt = Some(SubOption::Time) },
+                    'l' => { sub_opt = Some(SubOption::Long) },
+                    _ => { error::thrown_subopt_err(c.to_string(), "not support".to_string()) },
                 }
-                if let Some(sub_opt) = sub_options.get(&sub_opt) {
-                    
+                if let Some(sub_opt) = sub_opt {
+                    if sub_options.contains(&sub_opt) {
+                        error::thrown_subopt_err(c.to_string(), "duplicated".to_string());
+                    } else {
+                        sub_options.push(sub_opt);
+                    }
                 }
             }
         };
 
-        Self
+        let mut entries = Vec::new();
+        match env::current_dir() {
+            Ok(dir) => {
+                match fs::read_dir(dir) {
+                    Ok(read_dir) => {
+                        let dir = read_dir::iter();
+                        
+                        // for (index, dir_entry) in read_dir.into_iter().enumerate() {
+                        //     match dir_entry {
+                        //         Ok(de) => {
+                        //             let new_entry = Entry::new(de, index as i32, count as i32);            
+                        //             entries.push(new_entry);
+                        //         },
+                        //         Err(e) => {
+                        //             error::thrown_common_err(e.to_string());
+                        //         },
+                        //     }
+                        // }
+                    },
+                    Err(e) => {
+                        error::thrown_common_err(e.to_string());
+                    },
+                }
+            },
+            Err(e) => {
+                error::thrown_common_err(e.to_string());
+            },
+        }
+
+        Self {
+            entries: entries,
+            sub_options: sub_options,
+        }
+    }
+
+    pub fn start(&self) {
+
     }
 }
-
-// #[derive(Default)]
-// pub struct DirEntryFormat {
-//     entrys: Vec<fs::DirEntry>,
-//     entry_errs: Option<Vec<std::io::Error>>,
-//     other_err: Option<std::io::Error>,
-// }
-
-// impl DirEntryFormat {
-//     pub fn init() -> Self {
-//         let mut dir_entry_format = DirEntryFormat::default();
-
-//         let cur_dir_path: path::PathBuf;
-//         match env::current_dir() {
-//             Ok(path) => {cur_dir_path = path},
-//             Err(e) => {
-//                 dir_entry_format.other_err = Some(e);
-//                 return dir_entry_format;
-//             },
-//         }
-
-//         let mut entry_errs: Vec<std::io::Error> = Vec::new();
-//         match fs::read_dir(cur_dir_path) {
-//             Ok(dir) => {
-//                 for entry in dir {
-//                     match entry {
-//                         Ok(entry)=>{dir_entry_format.entrys.push(entry)},
-//                         Err(e) =>{ entry_errs.push(e) },
-//                     }
-//                 }
-//             },
-//             Err(e) => {
-//                 dir_entry_format.other_err = Some(e);
-//                 return dir_entry_format;
-//             },
-//         }
-//         if entry_errs.len() > 0 {
-//             dir_entry_format.entry_errs = Some(entry_errs);
-//         }
-
-//         dir_entry_format
-//     }
-
-//     pub fn output(&self) {
-//         if let Some(err) = &self.other_err {
-//             println!("{}", err);
-//             return;
-//         }
-
-//         let mut res = String::new();
-//         for e in &self.entrys {
-//             let file_name = e.file_name();
-//             let mut file_name_str = String::new();
-//             if let Ok(v) = file_name.into_string() {
-//                 file_name_str = v;
-//             }
-//             if file_name_str.is_empty() || file_name_str.starts_with(".") {
-//                 continue;
-//             }
-//             res.push_str(&file_name_str);
-//             res.push('\t');
-//         }
-
-//         println!("{}", res);
-//     }
-// }

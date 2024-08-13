@@ -2,24 +2,23 @@ use std::{fmt::Write, fs};
 
 pub struct Entry {
     dir_entry: fs::DirEntry,
-    front_entry: Box<Option<Entry>>,
-    next_entry: Box<Option<Entry>>,
     file_name: String,
+    index: i32,
 
     prefix: String,
     content: String,
     suffix: String,
-    // colour: String,
+    is_display: bool,
 }
 
 impl Entry {
-    pub fn new(dir_entry :fs::DirEntry, front_entry: Option<Entry>, next_entry: Option<Entry>) -> Self {
+    pub fn new(dir_entry :fs::DirEntry, index: i32, total: i32) -> Self {
         let mut prefix = String::new();
-        if front_entry.is_some() {
+        if index > 0 {
             prefix = "\t".to_string();
         }
         let mut suffix = String::new();
-        if next_entry.is_none() {
+        if index+1 == total {
             suffix = "\n".to_string();
         }
 
@@ -30,21 +29,13 @@ impl Entry {
 
         Self{
             dir_entry: dir_entry,
-            front_entry: Box::new(front_entry),
-            next_entry: Box::new(next_entry),
             file_name,
+            index,
             prefix,
             content: file_name,
             suffix,
+            is_display: false,
         }
-    }
-
-    pub fn set_next_entry(&self, next_entry: Option<Entry>) {
-        self.next_entry = Box::new(next_entry);
-    }
-
-    pub fn set_front_entry(&self, front_entry: Option<Entry>) {
-        self.front_entry = Box::new(front_entry);
     }
 
     pub fn render(&self) -> String {
