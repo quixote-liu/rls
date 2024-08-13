@@ -1,10 +1,8 @@
 use std::alloc::System;
 use std::collections::HashMap;
-use std::env;
-use std::fmt::Error;
-use std::fs;
-use std::path;
+use std::{env, process};
 use crate::entry::Entry;
+use crate::error;
 
 pub struct Render {
     header_entry: Box<Option<Entry>>,
@@ -17,7 +15,7 @@ enum SubOption {
 }
 
 impl Render {
-    pub fn init() -> Result<Self, System::Err> {
+    pub fn init() -> Self {
         let mut is_all_entry = false;
         let mut sub_options = HashMap::new();
 
@@ -30,18 +28,25 @@ impl Render {
             for c in a.chars() {
                 let mut sub_opt: SubOption;
                 match c {
-                    "a" => { 
+                    'a' => { 
                         is_all_entry = true;
                         sub_opt = SubOption::All;
                     },
-                    "t" => { sub_opt = SubOption::Time },
-                    "l" => { sub_opt = SubOption::Long },
-                    _ => { 
-                        return Err()    
+                    't' => { sub_opt = SubOption::Time },
+                    'l' => { sub_opt = SubOption::Long },
+                    _ => {
+                        let e = error::new_sub_opt(c.to_string(), "does not support".to_string());
+                        println!("{}", e);
+                        process::exit(0);
                     },
+                }
+                if let Some(sub_opt) = sub_options.get(&sub_opt) {
+                    
                 }
             }
         };
+
+        Self
     }
 }
 
