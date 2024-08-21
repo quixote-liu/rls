@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::{env, fs};
 use crate::entry::Entry;
 use crate::error;
@@ -7,7 +8,7 @@ pub struct Render {
     sub_options: Vec<SubOption>,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 enum SubOption {
     Time,
     All,
@@ -46,19 +47,16 @@ impl Render {
             Ok(dir) => {
                 match fs::read_dir(dir) {
                     Ok(read_dir) => {
-                        let dir = read_dir::iter();
-                        
-                        // for (index, dir_entry) in read_dir.into_iter().enumerate() {
-                        //     match dir_entry {
-                        //         Ok(de) => {
-                        //             let new_entry = Entry::new(de, index as i32, count as i32);            
-                        //             entries.push(new_entry);
-                        //         },
-                        //         Err(e) => {
-                        //             error::thrown_common_err(e.to_string());
-                        //         },
-                        //     }
-                        // }
+                        for dir_entry in read_dir.into_iter() {
+                            match dir_entry {
+                                Ok(de) => {
+                                    entries.push(Entry::new(de));
+                                },
+                                Err(e) => {
+                                    error::thrown_common_err(e.to_string());
+                                },
+                            }
+                        }
                     },
                     Err(e) => {
                         error::thrown_common_err(e.to_string());
@@ -70,13 +68,55 @@ impl Render {
             },
         }
 
-        Self {
+        let mut render = Self{
             entries: entries,
             sub_options: sub_options,
+        };
+
+        render.set_entries_index();
+
+        render
+    }
+
+    fn set_entries_index(&mut self) {
+        // init entries attributes
+        let count = self.entries.len();
+        for (i, e) in self.entries.iter_mut().enumerate() {
+            if i == 0 {
+                e.is_first(true)
+            }
+            if i + 1 == count {
+                e.is_last(true)
+            }
+            e.set_index(i as i32);
         }
     }
 
-    pub fn start(&self) {
-
+    pub fn start(&mut self) {
+        for sub_opt in self.sub_options.clone() {
+            match sub_opt {
+                SubOption::All => {
+                    self.entries.iter_mut().for_each(|e| {
+                        e.set_display(true);
+                    });
+                },
+                SubOption::Long => {
+                    self.entries.iter_mut().for_each(|e| {
+                        e.set_long_info();
+                    });
+                },
+                SubOption::Time => {
+                    self.entries.sort_by(|a, b| {
+                        if let (Ok(m1), Ok(m2)) = (a.dir_entry().metadata(), b.dir_entry().metadata()) {
+                            if let (Ok(t1), Ok(t2)) = (m1.modified(), m2.modified()) {
+                                return t1.cmp(&t2)
+                            }
+                        }
+                        Ordering::Equal
+                    });
+                    self.set_entries_index();
+                },
+            }
+        }
     }
 }
