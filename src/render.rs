@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::io::Write;
 use std::{env, fs};
 use crate::entry::Entry;
 use crate::error;
@@ -73,22 +74,31 @@ impl Render {
             sub_options: sub_options,
         };
 
-        render.set_entries_index();
+        render.set_entries_sort();
 
         render
     }
 
-    fn set_entries_index(&mut self) {
-        // init entries attributes
-        let count = self.entries.len();
-        for (i, e) in self.entries.iter_mut().enumerate() {
-            if i == 0 {
-                e.is_first(true)
+    fn set_entries_sort(&mut self) {
+        let count: usize = self.entries.len();
+        for i in 0..count {
+            let e = self.entries.get_mut(i).unwrap();
+            e.is_first(false);
+            e.is_last(false);
+        }
+        for i in 0..count {
+            let e = self.entries.get_mut(i).unwrap();
+            if e.get_display() {
+                e.is_first(true);
+                break;
             }
-            if i + 1 == count {
-                e.is_last(true)
+        }
+        for i in (0..count).rev() {
+            let e = self.entries.get_mut(i).unwrap();
+            if e.get_display() {
+                e.is_last(true);
+                break;
             }
-            e.set_index(i as i32);
         }
     }
 
@@ -114,9 +124,13 @@ impl Render {
                         }
                         Ordering::Equal
                     });
-                    self.set_entries_index();
                 },
             }
+        }
+        self.set_entries_sort();
+        for entry in self.entries.iter() {
+            let output = entry.render();
+            std::io::stdout().write(output.as_bytes()).unwrap();
         }
     }
 }

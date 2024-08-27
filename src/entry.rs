@@ -3,7 +3,6 @@ use std::{fmt::Write, fs};
 pub struct Entry {
     dir_entry: fs::DirEntry,
     file_name: String,
-    index: i32,
 
     prefix: String,
     content: String,
@@ -25,10 +24,9 @@ impl Entry {
         }
         Self{
             dir_entry: dir_entry,
-            file_name: file_name,
-            index: 0,
+            file_name: file_name.clone(),
             prefix: "".to_string(),
-            content: "".to_string(),
+            content: file_name,
             suffix: "".to_string(),
             display,
             is_first: false,
@@ -37,6 +35,9 @@ impl Entry {
     }
 
     pub fn render(&self) -> String {
+        if !self.display {
+            return "".to_string();
+        }
         let mut r = String::new();
         let (prefix, suffix) = self.get_prefix_and_suffix();
         let _ = r.write_str(&prefix);
@@ -47,18 +48,12 @@ impl Entry {
 
     fn get_prefix_and_suffix(&self) -> (String, String) {
         let mut prefix = self.prefix.clone();
-        if prefix.is_empty() {
-            if self.is_first {
-                prefix.push_str("\n");
-            } else {
-                prefix.push_str("\t");
-            }
+        if prefix.is_empty() && !self.is_first {
+            prefix.push_str("\t");
         }
         let mut suffix = self.suffix.clone();
-        if suffix.is_empty() {
-            if self.is_last {
-                suffix.push_str("\n");
-            }
+        if suffix.is_empty() && self.is_last {
+            suffix.push_str("\n");
         }
         (prefix, suffix)
     }
@@ -71,12 +66,12 @@ impl Entry {
         self.display = flag
     }
 
-    pub fn set_long_info(&mut self) {
-        // TODO: optimize
+    pub fn get_display(&self) -> bool {
+        self.display
     }
 
-    pub fn set_index(&mut self, index: i32) {
-        self.index = index
+    pub fn set_long_info(&mut self) {
+        // TODO: optimize
     }
 
     pub fn is_last(&mut self, v: bool) {
