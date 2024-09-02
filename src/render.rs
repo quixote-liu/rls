@@ -119,7 +119,7 @@ impl Render {
                     self.entries.sort_by(|a, b| {
                         if let (Ok(m1), Ok(m2)) = (a.dir_entry().metadata(), b.dir_entry().metadata()) {
                             if let (Ok(t1), Ok(t2)) = (m1.modified(), m2.modified()) {
-                                return t1.cmp(&t2)
+                                return t2.cmp(&t1)
                             }
                         }
                         Ordering::Equal

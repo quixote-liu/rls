@@ -2,7 +2,7 @@ use std::{fmt::Write, fs};
 
 pub struct Entry {
     dir_entry: fs::DirEntry,
-    file_name: String,
+    pub file_name: String,
 
     prefix: String,
     content: String,
@@ -49,7 +49,7 @@ impl Entry {
     fn get_prefix_and_suffix(&self) -> (String, String) {
         let mut prefix = self.prefix.clone();
         if prefix.is_empty() && !self.is_first {
-            prefix.push_str("\t");
+            prefix.push_str("  ");
         }
         let mut suffix = self.suffix.clone();
         if suffix.is_empty() && self.is_last {
@@ -71,7 +71,7 @@ impl Entry {
     }
 
     pub fn set_long_info(&mut self) {
-        // TODO: optimize
+        
     }
 
     pub fn is_last(&mut self, v: bool) {
