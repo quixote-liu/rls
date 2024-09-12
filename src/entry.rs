@@ -1,4 +1,5 @@
-use std::{fmt::Write, fs, os::unix::fs::{FileTypeExt, MetadataExt}};
+use core::slice::SlicePattern;
+use std::{fmt::{Write}, fs, os::unix::fs::{FileTypeExt, MetadataExt}};
 
 pub struct Entry {
     dir_entry: fs::DirEntry,
@@ -71,10 +72,10 @@ impl Entry {
     }
 
     pub fn set_long_info(&mut self) {
-        // file metadata info
         let mut file_type = String::new();
-        
+
         if let Ok(metadata) = self.dir_entry.metadata() {
+            // file metadata info
             let ft = metadata.file_type();
             let mut ft_flag = " ";
             if ft.is_dir() {
@@ -94,9 +95,11 @@ impl Entry {
             }
             file_type.push_str(ft_flag);
 
+            // permissions
             let o_mode = format!("{:b}", metadata.mode());
             let mut file_permission = String::new();
             let per_flag = "rwx";
+            println!("o_mode = {}", o_mode);
             for ele in o_mode.chars().into_iter() {
                 if file_permission.len() >= 9 {
                     break;
@@ -113,7 +116,8 @@ impl Entry {
             }
             file_type.push_str(&file_permission);
         }
-        // permissions
+
+        self.content = format!("{}  {}", file_type, self.file_name);
     }
 
     pub fn is_last(&mut self, v: bool) {
@@ -123,5 +127,21 @@ impl Entry {
     pub fn is_first(&mut self, v: bool) {
         self.is_first = v
     }
+}
+
+fn extract_permissions_from_mode(mode: &str) -> &str {
+    let mut trans_i = 0;
+    for i in 0..mode.len() {
+        if mode.len() - i - 1 == 9 {
+            trans_i = i;
+            break;
+        }
+    }
+    
+    for i in trans_i..mode.len() {
+        
+    }
+    let mode_vec: Vec<u8> = mode.as_bytes().to_vec();
+    
 }
 
