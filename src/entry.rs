@@ -1,4 +1,4 @@
-use std::{fmt::Write, fs, ptr::metadata, os::unix::fs::{FileTypeExt, MetadataExt}};
+use std::{fmt::Write, fs, os::unix::fs::{FileTypeExt, MetadataExt}};
 
 pub struct Entry {
     dir_entry: fs::DirEntry,
