@@ -94,10 +94,9 @@ impl Entry {
             }
             file_type.push_str(ft_flag);
 
-            let mode = metadata.mode();
-            let o_mode = format!("{:b}", mode);
+            let o_mode = format!("{:b}", metadata.mode());
             let mut file_permission = String::new();
-            let mut per_flag = "rwx";
+            let per_flag = "rwx";
             for ele in o_mode.chars().into_iter() {
                 if file_permission.len() >= 9 {
                     break;
