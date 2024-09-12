@@ -1,4 +1,4 @@
-use std::{fmt::Write, fs};
+use std::{fmt::Write, fs, ptr::metadata, os::unix::fs::{FileTypeExt, MetadataExt}};
 
 pub struct Entry {
     dir_entry: fs::DirEntry,
@@ -71,7 +71,50 @@ impl Entry {
     }
 
     pub fn set_long_info(&mut self) {
+        // file metadata info
+        let mut file_type = String::new();
         
+        if let Ok(metadata) = self.dir_entry.metadata() {
+            let ft = metadata.file_type();
+            let mut ft_flag = " ";
+            if ft.is_dir() {
+                ft_flag = "d";
+            } else if ft.is_file() {
+                ft_flag = "-";
+            } else if ft.is_symlink() {
+                ft_flag = "l";
+            } else if ft.is_block_device() {
+                ft_flag = "b";
+            } else if ft.is_char_device() {
+                ft_flag = "c";
+            } else if ft.is_socket() {
+                ft_flag = "s";
+            } else if ft.is_fifo() {
+                ft_flag = "p";
+            }
+            file_type.push_str(ft_flag);
+
+            let mode = metadata.mode();
+            let o_mode = format!("{:b}", mode);
+            let mut file_permission = String::new();
+            let mut per_flag = "rwx";
+            for ele in o_mode.chars().into_iter() {
+                if file_permission.len() >= 9 {
+                    break;
+                }
+                if ele == '1' {
+                    let i = file_permission.len()%3;
+                    let chars: Vec<char> = per_flag.chars().collect();
+                    if let Some(c) = chars.get(i) {
+                        file_permission.push(c.clone());
+                    }
+                } else {
+                    file_permission.push_str("-");
+                }
+            }
+            file_type.push_str(&file_permission);
+        }
+        // permissions
     }
 
     pub fn is_last(&mut self, v: bool) {
