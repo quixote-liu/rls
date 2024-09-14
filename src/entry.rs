@@ -77,7 +77,7 @@ impl Entry {
         if let Ok(metadata) = self.dir_entry.metadata() {
             // file metadata info
             let ft = metadata.file_type();
-            let mut ft_flag = " ";
+            let mut ft_flag = "-";
             if ft.is_dir() {
                 ft_flag = "d";
             } else if ft.is_file() {
@@ -129,16 +129,16 @@ impl Entry {
     }
 }
 
-fn extract_permissions_from_mode(mode: &str) -> &str {
+fn extract_permissions_from_mode(mode: u32) -> &str {
+    let mode_o = format!("{:o}", mode);
     let mut trans_i = 0;
-    for i in 0..mode.len() {
-        if mode.len() - i - 1 == 9 {
+    for i in 0..mode_o.len() {
+        if mode_o.len() - i - 1 == 9 {
             trans_i = i;
             break;
         }
     }
-    
-    for i in trans_i..mode.len() {
+    for i in trans_i..mode_o.len() {
         
     }
     let mode_vec: Vec<u8> = mode.as_bytes().to_vec();
