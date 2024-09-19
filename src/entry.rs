@@ -1,4 +1,3 @@
-use core::slice::SlicePattern;
 use std::{fmt::{Write}, fs, os::unix::fs::{FileTypeExt, MetadataExt}};
 
 pub struct Entry {
@@ -96,23 +95,21 @@ impl Entry {
             file_type.push_str(ft_flag);
 
             // permissions
-            let o_mode = format!("{:b}", metadata.mode());
-            let mut file_permission = String::new();
-            let per_flag = "rwx";
-            println!("o_mode = {}", o_mode);
-            for ele in o_mode.chars().into_iter() {
-                if file_permission.len() >= 9 {
-                    break;
-                }
-                if ele == '1' {
-                    let i = file_permission.len()%3;
-                    let chars: Vec<char> = per_flag.chars().collect();
-                    if let Some(c) = chars.get(i) {
-                        file_permission.push(c.clone());
+            let mut mode_bit_raw_str = format!("{:b}", metadata.mode());
+            let mut file_permission = String::from("");
+            if mode_bit_raw_str.len() >= 9 {
+                let permission_model = "rwxrwxrwx";
+                let mode_bit_str = mode_bit_raw_str.split_off(mode_bit_raw_str.len()-9);
+                for (i, v) in mode_bit_str.as_bytes().iter().enumerate() {
+                    if *v == b'1' {
+                        file_permission.push_str(&permission_model[i].clone().to_string());
+                    } else {
+                        file_permission.push_str("-");
                     }
-                } else {
-                    file_permission.push_str("-");
                 }
+            }
+            if file_permission.len() == 0 {
+                file_permission = "---------".to_string();
             }
             file_type.push_str(&file_permission);
         }
@@ -129,19 +126,19 @@ impl Entry {
     }
 }
 
-fn extract_permissions_from_mode(mode: u32) -> &str {
-    let mode_o = format!("{:o}", mode);
-    let mut trans_i = 0;
-    for i in 0..mode_o.len() {
-        if mode_o.len() - i - 1 == 9 {
-            trans_i = i;
-            break;
-        }
-    }
-    for i in trans_i..mode_o.len() {
+// fn extract_permissions_from_mode(mode: u32) -> &str {
+//     let mode_o = format!("{:o}", mode);
+//     let mut trans_i = 0;
+//     for i in 0..mode_o.len() {
+//         if mode_o.len() - i - 1 == 9 {
+//             trans_i = i;
+//             break;
+//         }
+//     }
+//     for i in trans_i..mode_o.len() {
         
-    }
-    let mode_vec: Vec<u8> = mode.as_bytes().to_vec();
+//     }
+//     let mode_vec: Vec<u8> = mode.as_bytes().to_vec();
     
-}
+// }
 
