@@ -95,26 +95,26 @@ impl Entry {
             file_type.push_str(ft_flag);
 
             // permissions
-            let mut mode_bit_raw_str = format!("{:b}", metadata.mode());
+            let mut raw_mode_bit = format!("{:b}", metadata.mode());
             let mut file_permission = String::from("");
-            if mode_bit_raw_str.len() >= 9 {
+            if raw_mode_bit.len() >= 9 {
                 let permission_model = "rwxrwxrwx";
-                let mode_bit_str = mode_bit_raw_str.split_off(mode_bit_raw_str.len()-9);
-                for (i, v) in mode_bit_str.as_bytes().iter().enumerate() {
-                    if *v == b'1' {
-                        file_permission.push_str(&permission_model[i].clone().to_string());
+                let mode_bit = raw_mode_bit.split_off(raw_mode_bit.len()-9);
+                for (i, c) in mode_bit.chars().into_iter().enumerate() {
+                    if c == '1' {
+                        file_permission.push_str(&permission_model[i..i+1]);
                     } else {
                         file_permission.push_str("-");
                     }
                 }
             }
             if file_permission.len() == 0 {
-                file_permission = "---------".to_string();
+                file_permission = ["-"; 9].join("");
             }
             file_type.push_str(&file_permission);
         }
 
-        self.content = format!("{}  {}", file_type, self.file_name);
+        self.content = format!("{}  {}\n", file_type, self.file_name);
     }
 
     pub fn is_last(&mut self, v: bool) {
