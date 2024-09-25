@@ -69,40 +69,14 @@ impl Render {
             },
         }
 
-        let mut render = Self{
+        Self{
             entries: entries,
             sub_options: sub_options,
-        };
-
-        render.set_entries_sort();
-
-        render
-    }
-
-    fn set_entries_sort(&mut self) {
-        let count: usize = self.entries.len();
-        for i in 0..count {
-            let e = self.entries.get_mut(i).unwrap();
-            e.is_first(false);
-            e.is_last(false);
-        }
-        for i in 0..count {
-            let e = self.entries.get_mut(i).unwrap();
-            if e.get_display() {
-                e.is_first(true);
-                break;
-            }
-        }
-        for i in (0..count).rev() {
-            let e = self.entries.get_mut(i).unwrap();
-            if e.get_display() {
-                e.is_last(true);
-                break;
-            }
         }
     }
 
     pub fn start(&mut self) {
+        let mut change_line_output = false;
         for sub_opt in self.sub_options.clone() {
             match sub_opt {
                 SubOption::All => {
@@ -114,6 +88,7 @@ impl Render {
                     self.entries.iter_mut().for_each(|e| {
                         e.set_long_info();
                     });
+                    change_line_output = true;
                 },
                 SubOption::Time => {
                     self.entries.sort_by(|a, b| {
@@ -127,10 +102,23 @@ impl Render {
                 },
             }
         }
-        self.set_entries_sort();
-        for entry in self.entries.iter() {
-            let output = entry.render();
-            std::io::stdout().write(output.as_bytes()).unwrap();
+        let mut out = std::io::stdout();
+        for (i, entry) in self.entries.iter().enumerate() {
+            if !entry.is_display() {
+                continue;
+            }
+            let prefix;
+            if i == 0 {
+                prefix = "".to_string();
+            } else if change_line_output {
+                prefix = "\n".to_string();
+            } else {
+                prefix = "  ".to_string();
+            }
+            out.write(prefix.as_bytes()).unwrap();
+
+            out.write(entry.content().as_bytes()).unwrap();
         }
+        out.write("\n".as_bytes()).unwrap();
     }
 }
