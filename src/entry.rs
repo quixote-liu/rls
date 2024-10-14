@@ -1,7 +1,10 @@
-use std::{fs, os::unix::fs::{FileTypeExt, MetadataExt}};
+use std::{
+    fs, os::unix::fs::{FileTypeExt, MetadataExt},
+    path::Path,
+};
 
 pub struct Entry {
-    dir_entry: fs::DirEntry,
+    entry: fs::DirEntry,
     pub file_name: String,
 
     content: String,
@@ -19,7 +22,7 @@ impl Entry {
             display = false;
         }
         Self{
-            dir_entry: dir_entry,
+            entry: dir_entry,
             file_name: file_name.clone(),
             content: file_name,
             display,
@@ -31,7 +34,7 @@ impl Entry {
     }
 
     pub fn dir_entry(&self) -> &fs::DirEntry {
-        &self.dir_entry
+        &self.entry
     }
 
     pub fn set_display(&mut self, flag: bool) {
@@ -45,7 +48,7 @@ impl Entry {
     pub fn set_long_info(&mut self) {
         let mut file_type = String::new();
 
-        if let Ok(metadata) = self.dir_entry.metadata() {
+        if let Ok(metadata) = self.entry.metadata() {
             // file metadata info
             let ft = metadata.file_type();
             let mut ft_flag = "-";
@@ -84,8 +87,50 @@ impl Entry {
                 file_permission = ["-"; 9].join("");
             }
             file_type.push_str(&file_permission);
+
+            // user and user-group infomation
+            // TODO: transform user id to user name
+            let uid = metadata.uid();
+            let gid = metadata.gid();
+            file_type.push_str(format!("  {uid} {gid}").as_str());
+
+            // get files number
+            let mut total = 1;
+            if ft.is_dir() {
+
+            }
         }
 
         self.content = format!("{}  {}", file_type, self.file_name);
+
+
+    }
+}
+
+fn count_files(dir_path: &Path, ref mut count: i32) {
+    if dir_path.is_dir() {
+        if let Ok(dir) = fs::read_dir(dir_path) {
+            dir.for_each(|res| {
+                if let Ok(e) = res {
+                    let new_dir_path = dir_path.join(e.file_name());
+                    count_files(&new_dir_path, *count);
+                } else {
+                    *count += 1;
+                }
+            })
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_count_files_num() {
+        let dir_path = Path::new("/home/lcs/worksplace/rls");
+        let count = 0;
+        count_files(dir_path, count);
+        println!("file count = {}", count);
     }
 }
