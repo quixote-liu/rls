@@ -1,7 +1,7 @@
 use std::{
-    fs, os::unix::fs::{FileTypeExt, MetadataExt},
-    path::Path,
+    fmt::format, fs, os::unix::fs::{FileTypeExt, MetadataExt}, path::Path
 };
+use chrono::{DateTime, Local, TimeZone};
 
 pub struct Entry {
     entry: fs::DirEntry,
@@ -88,49 +88,36 @@ impl Entry {
             }
             file_type.push_str(&file_permission);
 
+            // get files number
+            let mut count = 1;
+            let file_path = self.entry.path();
+            if file_path.is_dir() {
+                file_path.read_dir().unwrap().for_each(|_| count += 1);
+            }
+            file_type.push_str(format!(" {count}").as_str());
+
+
             // user and user-group infomation
             // TODO: transform user id to user name
             let uid = metadata.uid();
             let gid = metadata.gid();
             file_type.push_str(format!("  {uid} {gid}").as_str());
 
-            // get files number
-            let mut total = 1;
-            if ft.is_dir() {
+            // set file size
+            let size = metadata.size();
+            file_type.push_str(format!(" {size}").as_str());
 
+            // set update time
+            let mtime = metadata.mtime();
+            if let mt = Local::timestamp(, mtime, 0);
+            if let Some(t) = chrono::DateTime::from_timestamp(mtime, 0) {
+                t.with_timezone(chrono::TimeZone);
             }
+            
         }
 
         self.content = format!("{}  {}", file_type, self.file_name);
 
 
-    }
-}
-
-fn count_files(dir_path: &Path, ref mut count: i32) {
-    if dir_path.is_dir() {
-        if let Ok(dir) = fs::read_dir(dir_path) {
-            dir.for_each(|res| {
-                if let Ok(e) = res {
-                    let new_dir_path = dir_path.join(e.file_name());
-                    count_files(&new_dir_path, *count);
-                } else {
-                    *count += 1;
-                }
-            })
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_count_files_num() {
-        let dir_path = Path::new("/home/lcs/worksplace/rls");
-        let count = 0;
-        count_files(dir_path, count);
-        println!("file count = {}", count);
     }
 }
