@@ -1,7 +1,7 @@
 use std::{
-    fmt::format, fs, os::unix::fs::{FileTypeExt, MetadataExt}, path::Path
+    fs, os::unix::fs::{FileTypeExt, MetadataExt}
 };
-use chrono::{DateTime, Local, TimeZone};
+use chrono::DateTime;
 
 pub struct Entry {
     entry: fs::DirEntry,
@@ -92,10 +92,10 @@ impl Entry {
             let mut count = 1;
             let file_path = self.entry.path();
             if file_path.is_dir() {
+                count = 0;
                 file_path.read_dir().unwrap().for_each(|_| count += 1);
             }
             file_type.push_str(format!(" {count}").as_str());
-
 
             // user and user-group infomation
             // TODO: transform user id to user name
@@ -109,11 +109,10 @@ impl Entry {
 
             // set update time
             let mtime = metadata.mtime();
-            if let mt = Local::timestamp(, mtime, 0);
-            if let Some(t) = chrono::DateTime::from_timestamp(mtime, 0) {
-                t.with_timezone(chrono::TimeZone);
+            if let Some(t) = DateTime::from_timestamp(mtime, 0) {
+                let ndt = t.naive_local();
+                file_type.push_str(format!(" {}", ndt.to_string()).as_str());
             }
-            
         }
 
         self.content = format!("{}  {}", file_type, self.file_name);
