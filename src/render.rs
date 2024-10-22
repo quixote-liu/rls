@@ -76,7 +76,7 @@ impl Render {
     }
 
     pub fn start(&mut self) {
-        let mut change_line_output = false;
+        let mut output_long_info = false;
         for sub_opt in self.sub_options.clone() {
             match sub_opt {
                 SubOption::All => {
@@ -86,9 +86,9 @@ impl Render {
                 },
                 SubOption::Long => {
                     self.entries.iter_mut().for_each(|e| {
-                        e.set_long_info();
+                        e.load_long_info();
                     });
-                    change_line_output = true;
+                    output_long_info = true;
                 },
                 SubOption::Time => {
                     self.entries.sort_by(|a, b| {
@@ -110,14 +110,19 @@ impl Render {
             let prefix;
             if i == 0 {
                 prefix = "".to_string();
-            } else if change_line_output {
+            } else if output_long_info {
                 prefix = "\n".to_string();
             } else {
                 prefix = "  ".to_string();
             }
             out.write(prefix.as_bytes()).unwrap();
 
-            out.write(entry.content().as_bytes()).unwrap();
+            let mut content = entry.file_name.clone();
+            if output_long_info {
+                
+            }
+            
+            out.write(content.as_bytes()).unwrap();
         }
         out.write("\n".as_bytes()).unwrap();
     }

@@ -1,14 +1,20 @@
 use std::{
-    fs, os::unix::fs::{FileTypeExt, MetadataExt}
+    default, fs, os::unix::fs::{FileTypeExt, MetadataExt}
 };
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 
+#[derive(Default)]
 pub struct Entry {
     entry: fs::DirEntry,
     pub file_name: String,
 
-    content: String,
     display: bool,
+    size: u64,
+    file_permission: String,
+    files_number: i32,
+    user_name: String,
+    group_name: String,
+    update_time: DateTime<Utc>,
 }
 
 impl Entry {
@@ -21,16 +27,11 @@ impl Entry {
         if file_name.starts_with(".") {
             display = false;
         }
-        Self{
+        Self {
             entry: dir_entry,
-            file_name: file_name.clone(),
-            content: file_name,
-            display,
+            file_name: file_name,
+            ..Default::default()
         }
-    }
-
-    pub fn content(&self) -> String {
-        self.content.clone()
     }
 
     pub fn dir_entry(&self) -> &fs::DirEntry {
@@ -45,9 +46,7 @@ impl Entry {
         self.display
     }
 
-    pub fn set_long_info(&mut self) {
-        let mut file_type = String::new();
-
+    pub fn load_long_info(&mut self) {
         if let Ok(metadata) = self.entry.metadata() {
             // file metadata info
             let ft = metadata.file_type();
@@ -67,7 +66,7 @@ impl Entry {
             } else if ft.is_fifo() {
                 ft_flag = "p";
             }
-            file_type.push_str(ft_flag);
+            self.file_permission.push_str(&ft_flag);
 
             // permissions
             let mut raw_mode_bit = format!("{:b}", metadata.mode());
@@ -86,7 +85,7 @@ impl Entry {
             if file_permission.len() == 0 {
                 file_permission = ["-"; 9].join("");
             }
-            file_type.push_str(&file_permission);
+            self.file_permission.push_str(&file_permission);
 
             // get files number
             let mut count = 1;
@@ -95,28 +94,24 @@ impl Entry {
                 count = 0;
                 file_path.read_dir().unwrap().for_each(|_| count += 1);
             }
-            file_type.push_str(format!(" {count}").as_str());
+            self.files_number = count;
 
             // user and user-group infomation
             // TODO: transform user id to user name
             let uid = metadata.uid();
             let gid = metadata.gid();
-            file_type.push_str(format!("  {uid} {gid}").as_str());
+            self.user_name = uid.to_string();
+            self.group_name = gid.to_string();
 
             // set file size
             let size = metadata.size();
-            file_type.push_str(format!(" {size}").as_str());
+            self.size = size;
 
             // set update time
             let mtime = metadata.mtime();
             if let Some(t) = DateTime::from_timestamp(mtime, 0) {
-                let ndt = t.naive_local();
-                file_type.push_str(format!(" {}", ndt.to_string()).as_str());
+                self.update_time = t.naive_local();
             }
         }
-
-        self.content = format!("{}  {}", file_type, self.file_name);
-
-
     }
 }
