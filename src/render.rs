@@ -69,6 +69,8 @@ impl Render {
             },
         }
 
+        entries.iter_mut().for_each(|e| e.load_info());
+
         Self{
             entries: entries,
             sub_options: sub_options,
@@ -81,21 +83,16 @@ impl Render {
             match sub_opt {
                 SubOption::All => {
                     self.entries.iter_mut().for_each(|e| {
-                        e.set_display(true);
+                        e.display = true;
                     });
                 },
                 SubOption::Long => {
-                    self.entries.iter_mut().for_each(|e| {
-                        e.load_long_info();
-                    });
                     output_long_info = true;
                 },
                 SubOption::Time => {
                     self.entries.sort_by(|a, b| {
-                        if let (Ok(m1), Ok(m2)) = (a.dir_entry().metadata(), b.dir_entry().metadata()) {
-                            if let (Ok(t1), Ok(t2)) = (m1.modified(), m2.modified()) {
-                                return t2.cmp(&t1)
-                            }
+                        if let (Some(m1), Some(m2)) = (a.get_modified_time(), b.get_modified_time()) {
+                            return m2.cmp(&m1);
                         }
                         Ordering::Equal
                     });
@@ -104,7 +101,7 @@ impl Render {
         }
         let mut out = std::io::stdout();
         for (i, entry) in self.entries.iter().enumerate() {
-            if !entry.is_display() {
+            if !entry.display {
                 continue;
             }
             let prefix;
@@ -117,9 +114,17 @@ impl Render {
             }
             out.write(prefix.as_bytes()).unwrap();
 
-            let mut content = entry.file_name.clone();
+            let content;
             if output_long_info {
-                
+                let file_permission = entry.file_permission.clone();
+                let file_count = entry.files_number;
+                let user = entry.user_name.clone();
+                let group = entry.group_name.clone();
+                let update_time = entry.update_time.to_rfc3339(); // TODO: optimize
+                let file_name = entry.file_name.clone();
+                content = format!("{file_permission} {file_count} {user} {group} {update_time} {file_name}");
+            } else {
+                content = entry.file_name.clone();
             }
             
             out.write(content.as_bytes()).unwrap();
