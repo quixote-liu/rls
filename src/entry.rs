@@ -10,7 +10,7 @@ pub struct Entry {
     pub display: bool,
     pub size: u64,
     pub file_permission: String,
-    pub files_number: i32,
+    pub files_number: String,
     pub user_name: String,
     pub group_name: String,
     pub update_time: DateTime<Utc>,
@@ -94,7 +94,7 @@ impl Entry {
                     count = 0;
                     file_path.read_dir().unwrap().for_each(|_| count += 1);
                 }
-                self.files_number = count;
+                self.files_number = count.to_string();
     
                 // user and user-group infomation
                 // TODO: transform user id to user name
