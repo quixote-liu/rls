@@ -20,6 +20,7 @@ enum SubOption {
     Time,
     All,
     Long,
+    HumanRead,
 }
 
 impl Render {
@@ -37,6 +38,7 @@ impl Render {
                     'a' => { sub_opt = Some(SubOption::All) },
                     't' => { sub_opt = Some(SubOption::Time) },
                     'l' => { sub_opt = Some(SubOption::Long) },
+                    'h' => { sub_opt = Some(SubOption::HumanRead) },
                     _ => { error::thrown_subopt_err(c.to_string(), "not support".to_string()) },
                 }
                 if let Some(sub_opt) = sub_opt {
@@ -139,6 +141,7 @@ impl Render {
     }
 
     pub fn start(&mut self) {
+        self.load_file_info();
         let mut output_long_info = false;
         for sub_opt in self.sub_options.clone() {
             match sub_opt {
@@ -148,7 +151,6 @@ impl Render {
                     });
                 },
                 SubOption::Long => {
-                    self.load_file_info();
                     output_long_info = true;
                 },
                 SubOption::Time => {
@@ -159,6 +161,9 @@ impl Render {
                         Ordering::Equal
                     });
                 },
+                SubOption::HumanRead => {
+                    // TODO: optimize
+                }
             }
         }
         if output_long_info {
