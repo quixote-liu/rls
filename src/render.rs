@@ -4,9 +4,15 @@ use std::{env, fs};
 use crate::entry::Entry;
 use crate::error;
 
+#[derive(Default)]
 pub struct Render {
     entries: Vec<Entry>,
     sub_options: Vec<SubOption>,
+
+    max_user_len: i32,
+    max_group_len: i32,
+    max_size_len: i32,
+    max_count_len: i32,
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -72,50 +78,67 @@ impl Render {
         Self{
             entries: entries,
             sub_options: sub_options,
+            ..Default::default()
         }
     }
 
-    pub fn init_entries_info(&mut self) {
-        let mut user_len = 0;
-        let mut group_len= 0;
-        let mut file_num_len = 0;
+    pub fn load_file_info(&mut self) {
+        self.entries.iter_mut().for_each(|e| {e.load_info()});
+    }
+
+    pub fn extract_max_info_for_entries(&mut self) {
         self.entries.iter_mut().for_each(|e| {
-            e.load_info();
-            
             let ul = e.user_name.len() as i32;
-            if ul > user_len { user_len = ul };
+            if ul > self.max_user_len { self.max_user_len = ul };
             
             let gl = e.group_name.len() as i32;
-            if gl > group_len { group_len = gl};
+            if gl > self.max_group_len { self.max_group_len = gl};
 
-            let cl = e.files_number.len() as i32;
-            if cl > file_num_len { file_num_len = cl};
-        });
-        self.entries.iter_mut().for_each(|e| {
-            let u_diff = user_len - e.user_name.len() as i32;
-            if u_diff > 0 {
-                let mut added = "".to_string();
-                for _i in 0..u_diff { added.push(' ');}
-                e.user_name.push_str(&added);
-            }
-            let g_diff = group_len - e.group_name.len() as i32;
-            if g_diff > 0 {
-                let mut added = "".to_string();
-                for _i in 0..g_diff { added.push(' ') }
-                e.group_name.push_str(&added);
-            }
-            let c_diff = file_num_len - e.files_number.len() as i32;
-            if c_diff > 0 {
-                let mut added = "".to_string();
-                for _i in 0..c_diff {added.push(' ')};
-                e.files_number.push_str(&added);
-            }
+            let cl = e.files_number.to_string().len() as i32;
+            if cl > self.max_count_len { self.max_count_len = cl};
+
+            let fs = e.size.to_string().len() as i32;
+            if fs > self.max_size_len { self.max_size_len = fs };
         });
     }
 
+    pub fn format_user_name(&self, user: String) -> String {
+        let mut u = user.clone();
+        let diff = self.max_size_len - user.len() as i32;
+        if diff > 0 {
+            for _i in 0..diff { u.push_str(" ") }   
+        }
+        return u
+    }
+
+    pub fn format_group_name(&self, group: String) -> String {
+        let mut g = group.clone();
+        let diff = self.max_group_len - group.len() as i32;
+        if diff > 0 {
+            for _i in 0..diff { g.push_str(" ") };
+        }
+        return g
+    }
+
+    pub fn format_file_count(&self, count: i32) -> String {
+        let mut cs = count.to_string();
+        let diff = self.max_count_len - cs.len() as i32;
+        if diff > 0 {
+            for _i in 0..diff { cs.push_str(" ") };
+        }
+        return cs
+    }
+
+    pub fn format_size_display(&self, size: u64) -> String {
+        let mut ss = size.to_string();
+        let diff = self.max_size_len - ss.len() as i32;
+        if diff > 0 {
+            for _i in 0..diff { ss.push_str(" ") };
+        }
+        return ss
+    }
+
     pub fn start(&mut self) {
-        self.init_entries_info();
-        
         let mut output_long_info = false;
         for sub_opt in self.sub_options.clone() {
             match sub_opt {
@@ -125,6 +148,7 @@ impl Render {
                     });
                 },
                 SubOption::Long => {
+                    self.load_file_info();
                     output_long_info = true;
                 },
                 SubOption::Time => {
@@ -136,6 +160,9 @@ impl Render {
                     });
                 },
             }
+        }
+        if output_long_info {
+            self.extract_max_info_for_entries();
         }
         let mut out = std::io::stdout();
         for (i, entry) in self.entries.iter().enumerate() {
@@ -155,12 +182,13 @@ impl Render {
             let content;
             if output_long_info {
                 let file_permission = entry.file_permission.clone();
-                let file_count = entry.files_number.clone();
-                let user = entry.user_name.clone();
-                let group = entry.group_name.clone();
-                let update_time = entry.update_time.format("%Y-%m-%d %H:%M:%S").to_string(); // TODO: optimize
+                let file_count = self.format_file_count(entry.files_number);
+                let size = self.format_size_display(entry.size);
+                let user = self.format_user_name(entry.user_name.clone());
+                let group = self.format_group_name(entry.group_name.clone());
+                let update_time = entry.update_time.format("%Y-%m-%d %H:%M:%S").to_string();
                 let file_name = entry.file_name.clone();
-                content = format!("{file_permission} {file_count} {user} {group} {update_time} {file_name}");
+                content = format!("{file_permission} {file_count} {user} {group} {size} {update_time} {file_name}");
             } else {
                 content = entry.file_name.clone();
             }
