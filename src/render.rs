@@ -12,6 +12,7 @@ pub struct Render {
     max_user_len: i32,
     max_group_len: i32,
     max_size_len: i32,
+    max_size_format_len: i32,
     max_count_len: i32,
 }
 
@@ -101,6 +102,9 @@ impl Render {
 
             let fs = e.size.to_string().len() as i32;
             if fs > self.max_size_len { self.max_size_len = fs };
+
+            let fsf = e.size_format.len() as i32;
+            if fsf > self.max_size_format_len { self.max_size_format_len = fsf };
         });
     }
 
@@ -131,15 +135,6 @@ impl Render {
         return cs
     }
 
-    pub fn format_size_display(&self, size: u64) -> String {
-        let mut ss = size.to_string();
-        let diff = self.max_size_len - ss.len() as i32;
-        if diff > 0 {
-            for _i in 0..diff { ss.push_str(" ") };
-        }
-        return ss
-    }
-
     pub fn start(&mut self) {
         self.load_file_info();
         let mut output_long_info = false;
@@ -162,7 +157,9 @@ impl Render {
                     });
                 },
                 SubOption::HumanRead => {
-                    // TODO: optimize
+                    self.entries.iter_mut().for_each(|e| {
+                        e.format_entry_size();
+                    });
                 }
             }
         }
@@ -188,7 +185,7 @@ impl Render {
             if output_long_info {
                 let file_permission = entry.file_permission.clone();
                 let file_count = self.format_file_count(entry.files_number);
-                let size = self.format_size_display(entry.size);
+                let size = entry.get_file_size_display(self.max_size_format_len, self.max_size_len);
                 let user = self.format_user_name(entry.user_name.clone());
                 let group = self.format_group_name(entry.group_name.clone());
                 let update_time = entry.update_time.format("%Y-%m-%d %H:%M:%S").to_string();

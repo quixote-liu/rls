@@ -9,6 +9,7 @@ pub struct Entry {
     pub file_name: String,
     pub display: bool,
     pub size: u64,
+    pub size_format: String,
     pub file_permission: String,
     pub files_number: i32,
     pub user_name: String,
@@ -114,5 +115,42 @@ impl Entry {
                 }
             }
         }
+    }
+
+    pub fn format_entry_size(&mut self) {
+        let units = ["B", "K", "M", "G", "T"];
+        let mut size = self.size as f64;
+        let mut i = 0;
+        loop {
+            if i + 1 == units.len() {
+                break;
+            }
+            if size > 1024.0 {
+                size /= 1024.0;
+                i += 1;
+            } else {
+                break;
+            }
+        }
+        if i == 0 {
+            self.size_format = format!("{}{}", size, units[i]);
+        } else {
+            self.size_format = format!("{:.1}{}", size, units[i]);
+        }
+    }
+
+    pub fn get_file_size_display(&self, max_size_format: i32, max_len: i32) -> String {
+        let mut pad = String::new();
+        if !self.size_format.is_empty() {
+            let diff = max_size_format - self.size_format.len() as i32;
+            for _i in 0..diff {pad.push_str(" ")};
+            pad.push_str(&self.size_format.clone());
+        } else {
+            let size_str = self.size.to_string();
+            let diff = max_len - size_str.len() as i32;
+            for _i in 0..diff {pad.push_str(" ")};
+            pad.push_str(&size_str);
+        }
+        pad
     }
 }
