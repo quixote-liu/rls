@@ -22,6 +22,8 @@ enum SubOption {
     All,
     Long,
     HumanRead,
+    Size,
+    Dir,
 }
 
 impl Render {
@@ -36,10 +38,12 @@ impl Render {
             for c in a.chars() {
                 let mut sub_opt: Option<SubOption> = None;
                 match c {
-                    'a' => { sub_opt = Some(SubOption::All) },
-                    't' => { sub_opt = Some(SubOption::Time) },
-                    'l' => { sub_opt = Some(SubOption::Long) },
-                    'h' => { sub_opt = Some(SubOption::HumanRead) },
+                    'a' => {sub_opt = Some(SubOption::All)},
+                    't' => {sub_opt = Some(SubOption::Time)},
+                    'l' => {sub_opt = Some(SubOption::Long)},
+                    'h' => {sub_opt = Some(SubOption::HumanRead)},
+                    'S' => {sub_opt = Some(SubOption::Size)},
+                    'd' => {sub_opt = Some(SubOption::Dir)}
                     _ => { error::thrown_subopt_err(c.to_string(), "not support".to_string()) },
                 }
                 if let Some(sub_opt) = sub_opt {
@@ -55,12 +59,16 @@ impl Render {
         let mut entries = Vec::new();
         match env::current_dir() {
             Ok(dir) => {
+                entries.push(Entry::from_cur(dir.clone()));
+                if let Some(parent) = dir.parent() {
+                    entries.push(Entry::from_parent(parent.to_path_buf()));
+                }
                 match fs::read_dir(dir) {
                     Ok(read_dir) => {
                         for dir_entry in read_dir.into_iter() {
                             match dir_entry {
                                 Ok(de) => {
-                                    entries.push(Entry::new(de));
+                                    entries.push(Entry::new(de.path()));
                                 },
                                 Err(e) => {
                                     error::thrown_common_err(e.to_string());
@@ -159,6 +167,20 @@ impl Render {
                 SubOption::HumanRead => {
                     self.entries.iter_mut().for_each(|e| {
                         e.format_entry_size();
+                    });
+                },
+                SubOption::Size => {
+                    self.entries.sort_by(|a, b| {
+                        return b.size.cmp(&a.size);
+                    });
+                },
+                SubOption::Dir => {
+                    self.entries.iter_mut().for_each(|e| {
+                        if e.is_cur {
+                            e.display = true
+                        } else {
+                            e.display = false
+                        }
                     });
                 }
             }
